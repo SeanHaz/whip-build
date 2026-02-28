@@ -13,19 +13,22 @@ jobs:
         run: |
           sudo dpkg --add-architecture armhf
 
-          # Completely replace sources to avoid armhf hitting wrong repos
+          # Wipe ALL apt source files including new DEB822 .sources format
           sudo rm -f /etc/apt/sources.list
           sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo rm -f /etc/apt/sources.list.d/*.sources
 
-          # amd64 only from archive
-          echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse" | sudo tee /etc/apt/sources.list
-          echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-          echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-
-          # armhf from ports
-          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-          echo "deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
+          # Write clean sources - amd64 from archive, armhf from ports
+          sudo tee /etc/apt/sources.list > /dev/null << 'EOF'
+          deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse
+          deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse
+          deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-backports main restricted universe multiverse
+          deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-backports main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse
+          EOF
 
           sudo apt update
           sudo apt install -y \
