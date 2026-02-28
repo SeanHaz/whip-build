@@ -1,0 +1,49 @@
+name: Build gst-plugin-webrtc for ARMv7
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-bad1.0-dev \
+            libssl-dev \
+            pkg-config \
+            git \
+            cargo-c
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Clone gst-plugins-rs
+        run: |
+          git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git
+
+      - name: Build gst-plugin-webrtc
+        run: |
+          cd gst-plugins-rs
+          cargo cbuild -p gst-plugin-webrtc --prefix=/usr
+
+      - name: Install to staging directory
+        run: |
+          cd gst-plugins-rs
+          cargo cinstall -p gst-plugin-webrtc --prefix=/usr --destdir=${{ github.workspace }}/output
+
+      - name: List output files
+        run: find ${{ github.workspace }}/output -type f
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gst-plugin-webrtc-armv7
+          path: ${{ github.workspace }}/output/
+          retention-days: 7
