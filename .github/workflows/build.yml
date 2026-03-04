@@ -83,6 +83,7 @@ jobs:
           export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig
           cd gst-plugins-rs
           cargo cinstall -p gst-plugin-webrtc \
+            -p gst-plugin-rtp \
             --target armv7-unknown-linux-gnueabihf \
             --prefix=/usr \
             --destdir=${{ github.workspace }}/output
