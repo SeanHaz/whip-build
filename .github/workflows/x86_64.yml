@@ -1,0 +1,65 @@
+name: Build gst-plugin-webrtc for x86_64 (Intel/AMD)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            pkg-config \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-bad1.0-dev \
+            libssl-dev \
+            build-essential
+
+      - name: Install Rust nightly
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+          source ~/.cargo/env
+
+      - name: Install cargo-c
+        run: |
+          source ~/.cargo/env
+          cargo install cargo-c
+
+      - name: Clone gst-plugins-rs
+        run: |
+          git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git
+          cd gst-plugins-rs
+          git log --oneline -1
+
+      - name: Build gst-plugin-webrtc
+        run: |
+          source ~/.cargo/env
+          export PKG_CONFIG_ALLOW_CROSS=1
+          export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
+          export CARGO_PROFILE_RELEASE_LTO=off
+          export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16
+          cd gst-plugins-rs
+          cargo cbuild -p gst-plugin-webrtc \
+            --prefix=/usr
+
+      - name: Install to output directory
+        run: |
+          source ~/.cargo/env
+          export PKG_CONFIG_ALLOW_CROSS=1
+          export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
+          cd gst-plugins-rs
+          cargo cinstall -p gst-plugin-webrtc \
+            -p gst-plugin-rtp \
+            --prefix=/usr \
+            --destdir=${{ github.workspace }}/output
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gst-plugin-webrtc-x86_64
+          path: output/
+          retention-days: 7
